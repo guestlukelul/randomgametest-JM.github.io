@@ -1,124 +1,127 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Square Escape!</title>
+<title>Square Escape: All Superpowers</title>
 <style>
-  body { margin:0; background:#111; overflow:hidden; }
-  canvas { display:block; margin:auto; background:#222; }
+body { margin:0; overflow:hidden; background:black; }
+#gameCanvas { background:#111; display:block; margin:0 auto; }
+#menu {
+ position:absolute; top:0; left:0; width:100%; height:100%;
+ display:flex; flex-direction:column; justify-content:center; align-items:center;
+ background:rgba(0,0,0,0.85); color:white; font-family:sans-serif;
+}
+button { padding:15px 30px; font-size:20px; margin:10px; border:none; border-radius:10px; cursor:pointer; }
 </style>
 </head>
 <body>
-<canvas id="game"></canvas>
-
+<div id="menu">
+<h1>Square Escape</h1>
+<button onclick="startGame()">Play</button>
+</div>
+<canvas id="gameCanvas" width="500" height="700"></canvas>
 <script>
-const canvas = document.getElementById("game");
-const ctx = canvas.getContext("2d");
+const canvas=document.getElementById("gameCanvas");
+const ctx=canvas.getContext("2d");
+let player={x:230,y:600,size:20,speed:3,color:"cyan"};
+let obstacles=[];
+let effects=[];
+let paths=[];
+let gameRunning=false;
+let currentEffects=[];
 
-canvas.width = 500;
-canvas.height = 600;
+function startGame(){
+ document.getElementById("menu").style.display="none";
+ gameRunning=true;
+ initPaths();
+ loop();
+}
 
-// Player
-let player = { x: 230, y: 550, size: 30, speed: 6 };
-let left = false, right = false;
+function initPaths(){
+ let y=0;
+ for(let i=0;i<20;i++){
+   let width=150+Math.sin(i*0.7)*80;
+   let x=(500-width)/2;
+   paths.push({x,y,width,height:150});
+   y+=150;
+ }
+}
 
-// Obstacles
-let obstacles = [];
-let spawnTimer = 0;
+function spawnBlock(){
+ let r=Math.random();
+ let type="kill";
+ let color="red";
+ if(r<0.3){
+   const powerList=[
+     {type:"immune",color:"white"},{type:"slow",color:"yellow"},{type:"dash",color:"magenta"},
+     {type:"teleport",color:"purple"},{type:"hyperspeed",color:"orange"},{type:"float",color:"cyan"},
+     {type:"reverse",color:"pink"},{type:"shield",color:"lime"},{type:"phase",color:"blue"},
+     {type:"timefreeze",color:"teal"},{type:"shrink",color:"lightgreen"},{type:"enlarge",color:"brown"},
+     {type:"slowmotion",color:"gold"},{type:"earthquake",color:"gray"},{type:"expandpath",color:"silver"},
+     {type:"collapsepath",color:"maroon"},{type:"coinmagnet",color:"orange"},{type:"fog",color:"darkgray"},
+     {type:"blindflash",color:"white"},{type:"mirror",color:"lightgray"},{type:"rainbow",color:"rainbow"},
+     {type:"ghosttrail",color:"lightblue"},{type:"glitch",color:"purple"},{type:"sticky",color:"yellow"},
+     {type:"wind",color:"lightyellow"},{type:"heavy",color:"darkblue"},{type:"bouncy",color:"violet"}
+   ];
+   let p=powerList[Math.floor(Math.random()*powerList.length)];
+   type=p.type; color=p.color;
+ }
+ let path=paths[Math.floor(player.y/150)%paths.length];
+ let ox=path.x+Math.random()*(path.width-20);
+ effects.push({x:ox,y:-20,size:20,color,type});
+}
 
-// Score
-let score = 0;
-let highscore = 0;
-let alive = true;
+function applyEffect(e){
+ currentEffects.push({type:e.type,timer:200});
+ switch(e.type){
+   case "immune": player.color="white"; break;
+   case "slow": player.speed=1.5; break;
+   case "dash": player.x+=50; break;
+   case "teleport": player.x=Math.random()*(canvas.width-player.size); break;
+   case "hyperspeed": player.speed=9; break;
+   case "reverse": player.reverse=true; break;
+   case "shield": player.shield=true; break;
+   case "phase": player.phase=true; break;
+   case "timefreeze": obstacles.forEach(o=>o.frozen=true); break;
+   case "shrink": player.size=10; break;
+   case "enlarge": player.size=40; break;
+   case "slowmotion": player.slowmotion=true; break;
+   case "expandpath": paths.forEach(p=>p.width+=50); break;
+   case "collapsepath": paths.forEach(p=>p.width-=50); break;
+   case "rainbow": break;
+   case "ghosttrail": break;
+   case "glitch": break;
+ }
+}
 
-document.addEventListener("keydown", e=>{
-  if(e.key === "ArrowLeft") left = true;
-  if(e.key === "ArrowRight") right = true;
-  if(e.key === " " && !alive) reset();
+function clearEffects(){
+ currentEffects=[];
+ player.speed=3; player.size=20; player.color="cyan";
+ player.reverse=false; player.phase=false;
+ obstacles.forEach(o=>o.frozen=false);
+ paths.forEach(p=>p.width=Math.max(50,Math.min(p.width,250)));
+}
+
+document.addEventListener("keydown",e=>{
+ if(e.key==="ArrowLeft") player.x-=(player.reverse?-player.speed:player.speed)*5;
+ if(e.key==="ArrowRight") player.x+=(player.reverse?-player.speed:player.speed)*5;
 });
-
-document.addEventListener("keyup", e=>{
-  if(e.key === "ArrowLeft") left = false;
-  if(e.key === "ArrowRight") right = false;
-});
-
-function reset(){
-  obstacles = [];
-  score = 0;
-  alive = true;
-}
-
-function spawnObstacle(){
-  let size = 30 + Math.random()*20;
-  let x = Math.random()*(canvas.width-size);
-  obstacles.push({ x, y:-size, size, speed:3 + Math.random()*3 });
-}
-
-function update(){
-  if(!alive) return;
-
-  // move player
-  if(left) player.x -= player.speed;
-  if(right) player.x += player.speed;
-  player.x = Math.max(0, Math.min(canvas.width - player.size, player.x));
-
-  // spawn obstacles
-  spawnTimer++;
-  if(spawnTimer > 30){
-    spawnObstacle();
-    spawnTimer = 0;
-  }
-
-  // move obstacles
-  obstacles.forEach((o, i)=>{
-    o.y += o.speed;
-    if(o.y > canvas.height) obstacles.splice(i,1);
-
-    // collision
-    if(o.x < player.x + player.size &&
-       o.x + o.size > player.x &&
-       o.y < player.y + player.size &&
-       o.y + o.size > player.y){
-         alive = false;
-         highscore = Math.max(highscore, score);
-    }
-  });
-
-  score++;
-}
-
-function draw(){
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-
-  // player
-  ctx.fillStyle = "#4af";
-  ctx.fillRect(player.x, player.y, player.size, player.size);
-
-  // obstacles
-  ctx.fillStyle = "#f44";
-  obstacles.forEach(o=>{
-    ctx.fillRect(o.x, o.y, o.size, o.size);
-  });
-
-  // score
-  ctx.fillStyle = "#fff";
-  ctx.font = "20px Arial";
-  ctx.fillText("Score: " + score, 10, 25);
-  ctx.fillText("Highscore: " + highscore, 10, 50);
-
-  if(!alive){
-    ctx.fillStyle = "#fff";
-    ctx.font = "30px Arial";
-    ctx.fillText("Game Over! Press SPACE to restart.", 35, canvas.height/2);
-  }
-}
 
 function loop(){
-  update();
-  draw();
-  requestAnimationFrame(loop);
+ if(!gameRunning) return;
+ ctx.clearRect(0,0,canvas.width,canvas.height);
+ paths.forEach(p=>ctx.fillStyle="#222", ctx.fillRect(p.x,p.y-(player.y-600),p.width,p.height));
+ if(Math.random()<0.05) spawnBlock();
+ effects.forEach(o=>{ o.y+=2; ctx.fillStyle=o.color==="rainbow"?`hsl(${Date.now()%360},100%,50%)`:o.color; ctx.fillRect(o.x,o.y,o.size,o.size); });
+ obstacles.forEach(o=>{ if(!o.frozen) o.y+=2; ctx.fillStyle=o.color; ctx.fillRect(o.x,o.y,o.size,o.size); });
+ ctx.fillStyle=player.color; ctx.fillRect(player.x,player.y,player.size,player.size);
+ effects.forEach((e,i)=>{ if(rect(player,e)){ applyEffect(e); e.y=9999; } });
+ obstacles.forEach(o=>{ if(rect(player,o) && !player.phase && !player.shield){ gameRunning=false; alert("Game Over!"); } else if(rect(player,o) && player.shield){ player.shield=false; o.y=9999; } });
+ currentEffects.forEach((eff,i)=>{ eff.timer--; if(eff.timer<=0){ currentEffects.splice(i,1); clearEffects(); } });
+ paths.forEach(p=>p.y+=1.5);
+ if(paths[0].y>700){ let last=paths[paths.length-1]; let width=150+Math.sin(Date.now()/500)*80; let x=(500-width)/2; paths.push({x,y:last.y-150,width,height:150}); paths.shift(); }
+ requestAnimationFrame(loop);
 }
-
-loop();
+function rect(a,b){ return a.x<b.x+b.size && a.x+a.size>b.x && a.y<b.y+b.size && a.y+a.size>b.y; }
 </script>
 </body>
 </html>
