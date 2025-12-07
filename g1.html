@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Square Escape!</title>
+<style>
+  body { margin:0; background:#111; overflow:hidden; }
+  canvas { display:block; margin:auto; background:#222; }
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+canvas.width = 500;
+canvas.height = 600;
+
+// Player
+let player = { x: 230, y: 550, size: 30, speed: 6 };
+let left = false, right = false;
+
+// Obstacles
+let obstacles = [];
+let spawnTimer = 0;
+
+// Score
+let score = 0;
+let highscore = 0;
+let alive = true;
+
+document.addEventListener("keydown", e=>{
+  if(e.key === "ArrowLeft") left = true;
+  if(e.key === "ArrowRight") right = true;
+  if(e.key === " " && !alive) reset();
+});
+
+document.addEventListener("keyup", e=>{
+  if(e.key === "ArrowLeft") left = false;
+  if(e.key === "ArrowRight") right = false;
+});
+
+function reset(){
+  obstacles = [];
+  score = 0;
+  alive = true;
+}
+
+function spawnObstacle(){
+  let size = 30 + Math.random()*20;
+  let x = Math.random()*(canvas.width-size);
+  obstacles.push({ x, y:-size, size, speed:3 + Math.random()*3 });
+}
+
+function update(){
+  if(!alive) return;
+
+  // move player
+  if(left) player.x -= player.speed;
+  if(right) player.x += player.speed;
+  player.x = Math.max(0, Math.min(canvas.width - player.size, player.x));
+
+  // spawn obstacles
+  spawnTimer++;
+  if(spawnTimer > 30){
+    spawnObstacle();
+    spawnTimer = 0;
+  }
+
+  // move obstacles
+  obstacles.forEach((o, i)=>{
+    o.y += o.speed;
+    if(o.y > canvas.height) obstacles.splice(i,1);
+
+    // collision
+    if(o.x < player.x + player.size &&
+       o.x + o.size > player.x &&
+       o.y < player.y + player.size &&
+       o.y + o.size > player.y){
+         alive = false;
+         highscore = Math.max(highscore, score);
+    }
+  });
+
+  score++;
+}
+
+function draw(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  // player
+  ctx.fillStyle = "#4af";
+  ctx.fillRect(player.x, player.y, player.size, player.size);
+
+  // obstacles
+  ctx.fillStyle = "#f44";
+  obstacles.forEach(o=>{
+    ctx.fillRect(o.x, o.y, o.size, o.size);
+  });
+
+  // score
+  ctx.fillStyle = "#fff";
+  ctx.font = "20px Arial";
+  ctx.fillText("Score: " + score, 10, 25);
+  ctx.fillText("Highscore: " + highscore, 10, 50);
+
+  if(!alive){
+    ctx.fillStyle = "#fff";
+    ctx.font = "30px Arial";
+    ctx.fillText("Game Over! Press SPACE to restart.", 35, canvas.height/2);
+  }
+}
+
+function loop(){
+  update();
+  draw();
+  requestAnimationFrame(loop);
+}
+
+loop();
+</script>
+</body>
+</html>
