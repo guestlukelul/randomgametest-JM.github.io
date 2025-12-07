@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Main Menu Framework</title>
+<style>
+/* ===========================
+   GLOBAL
+   =========================== */
+html, body {
+  margin: 0; padding: 0;
+  width: 100%; height: 100%;
+  overflow: hidden;
+  font-family: Arial, sans-serif;
+  background: #0d0d0d;
+  color: white;
+}
+
+/* App container */
+#App {
+  width: 100vw; height: 100vh;
+  position: relative;
+}
+
+/* ===========================
+   ANIMATED BACKGROUND
+   =========================== */
+#Background {
+  position: absolute;
+  width: 100%; height: 100%;
+  background: linear-gradient(130deg, #111, #1a1a1a, #111);
+  background-size: 400% 400%;
+  animation: bgMove 12s infinite;
+  z-index: 0;
+}
+
+@keyframes bgMove {
+  0% {background-position: 0% 50%;}
+  50% {background-position: 100% 50%;}
+  100% {background-position: 0% 50%;}
+}
+
+/* ===========================
+   MAIN MENU UI
+   =========================== */
+#MainMenu {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 5;
+  text-align: center;
+}
+
+/* Title */
+.MenuTitle {
+  font-size: 70px;
+  font-weight: bold;
+  letter-spacing: 2px;
+  margin-bottom: 60px;
+  text-shadow: 0px 0px 20px rgba(255,255,255,0.2);
+}
+
+/* Buttons */
+.MenuButton {
+  width: 300px;
+  padding: 22px;
+  margin: 18px;
+  background: rgba(40,40,40,0.9);
+  border-radius: 14px;
+  font-size: 26px;
+  cursor: pointer;
+  transition: 0.25s ease;
+  box-shadow: 0px 0px 12px rgba(0,0,0,0.5);
+}
+
+.MenuButton:hover {
+  background: rgba(60,60,60,0.95);
+  transform: scale(1.07);
+}
+
+/* Footer text (optional) */
+.Footer {
+  position: absolute;
+  bottom: 25px;
+  font-size: 14px;
+  opacity: 0.6;
+  letter-spacing: 1px;
+}
+
+</style>
+</head>
+<body>
+
+<div id="App">
+
+  <!-- Animated Background -->
+  <div id="Background"></div>
+
+  <!-- Main Menu -->
+  <div id="MainMenu">
+    <div class="MenuTitle">Random Game Test</div>
+
+    <div class="MenuButton" onclick="alert('Start button clicked!')">START</div>
+    <div class="MenuButton" onclick="alert('Settings button clicked!')">SETTINGS</div>
+    <div class="MenuButton" onclick="alert('Other button clicked!')">EXTRAS</div>
+    <div class="MenuButton" onclick="alert('Exit button clicked!')">EXIT</div>
+
+    <div class="Footer">© 2025 Jaden M - Dat1dev2 Studios</div>
+  </div>
+
+</div>
+
+</body>
+</html>
